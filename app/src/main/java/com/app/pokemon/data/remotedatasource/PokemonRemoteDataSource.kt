@@ -2,29 +2,33 @@ package com.app.pokemon.data.remotedatasource
 
 import com.app.pokemon.data.api.PokemonApiService
 import com.app.pokemon.data.model.Pokemon
-import com.app.pokemon.data.model.PokemonResponseModel
 import com.app.pokemon.data.model.Result
-import retrofit2.Response
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class PokemonRemoteDataSource @Inject constructor(private val apiService: PokemonApiService) {
 
-    suspend fun getRemoteData(): Result<List<Pokemon>> {
-        return try {
-
-            val response: Response<PokemonResponseModel> = apiService.fetchPokemons()
-            return if (response.isSuccessful) {
-                Result.Success(response.body()?.results ?: emptyList())
+    fun getRemoteData(): Flow<Result<List<Pokemon>>> = flow {
+        try {
+            val response = apiService.fetchPokemons()
+            if (response.isSuccessful) {
+                emit(Result.Success(response.body()?.results ?: emptyList()))
             } else {
-                Result.Error(
-                    response.code(),
-                    response.errorBody()?.string() ?: "Something went wrong"
+                emit(
+                    Result.Error(
+                        response.code(),
+                        response.errorBody()?.string()?.takeIf { it.isNotEmpty() }
+                            ?: "Something went wrong"
+                    )
                 )
             }
         } catch (e: Exception) {
-            Result.Error(
-                null,
-                e.localizedMessage ?: "Something went wrong"
+            emit(
+                Result.Error(
+                    null,
+                    e.localizedMessage ?: "Something went wrong"
+                )
             )
         }
     }

@@ -74,4 +74,5 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.retrofit)
     implementation(libs.retrofit.moshi)
+    implementation(libs.okhttpp3.logging)
 }

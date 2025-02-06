@@ -7,6 +7,7 @@ import com.app.pokemon.data.model.Result
 import com.app.pokemon.domain.usecase.FetchPokemonsUseCase
 import com.app.pokemon.presentation.state.PokemonUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,14 +22,19 @@ class MainViewModel @Inject constructor(private val fetchPokemonsUseCase: FetchP
     val pokemonUiState: StateFlow<PokemonUiState> = _pokemonUiState.asStateFlow()
 
     fun loadCharacters() {
-        viewModelScope.launch {
-            when (val pokemons: Result<List<Pokemon>> = fetchPokemonsUseCase()) {
-                is Result.Success -> {
-                    _pokemonUiState.value = PokemonUiState.Success(pokemons.data)
-                }
+        viewModelScope.launch(Dispatchers.Main) {
 
-                is Result.Error -> {
-                    _pokemonUiState.value = PokemonUiState.Failure(pokemons.message)
+            fetchPokemonsUseCase().collect { pokemons ->
+                when (pokemons) {
+                    is Result.Success -> {
+                        _pokemonUiState.value =
+                            PokemonUiState.Success(pokemons.data)
+                    }
+
+                    is Result.Error -> {
+                        _pokemonUiState.value =
+                            PokemonUiState.Failure(pokemons.message)
+                    }
                 }
             }
         }
